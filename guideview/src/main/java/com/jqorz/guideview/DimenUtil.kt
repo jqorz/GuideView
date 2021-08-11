@@ -1,35 +1,32 @@
-package com.binioter.guideview;
+package com.jqorz.guideview
 
-import android.content.Context;
+import android.content.Context
 
 /**
  * Created by binIoter
  */
-
-public class DimenUtil {
-    
-    /** sp转换成px */
-    public static int sp2px(Context context, float spValue) {
-        float fontScale = context.getApplicationContext().getResources().getDisplayMetrics().scaledDensity;
-        return (int) (spValue * fontScale + 0.5f);
+object DimenUtil {
+    /** sp转换成px  */
+    fun sp2px(context: Context, spValue: Float): Int {
+        val fontScale = context.applicationContext.resources.displayMetrics.scaledDensity
+        return (spValue * fontScale + 0.5f).toInt()
     }
 
-    /** px转换成sp */
-    public static int px2sp(Context context, float pxValue) {
-        float fontScale = context.getApplicationContext().getResources().getDisplayMetrics().density;
-        return (int) (pxValue / fontScale + 0.5f);
+    /** px转换成sp  */
+    fun px2sp(context: Context, pxValue: Float): Int {
+        val fontScale = context.applicationContext.resources.displayMetrics.density
+        return (pxValue / fontScale + 0.5f).toInt()
     }
 
-    /** dip转换成px */
-    public static int dp2px(Context context, float dipValue) {
-        float scale = context.getApplicationContext().getResources().getDisplayMetrics().scaledDensity;
-        return (int) (dipValue * scale + 0.5f);
+    /** dip转换成px  */
+    fun dp2px(context: Context, dipValue: Float): Int {
+        val scale = context.applicationContext.resources.displayMetrics.scaledDensity
+        return (dipValue * scale + 0.5f).toInt()
     }
 
-    /** px转换成dip */
-    public static int px2dp(Context context, float pxValue) {
-        float scale = context.getApplicationContext().getResources().getDisplayMetrics().scaledDensity;
-        return (int) (pxValue / scale + 0.5f);
+    /** px转换成dip  */
+    fun px2dp(context: Context, pxValue: Float): Int {
+        val scale = context.applicationContext.resources.displayMetrics.scaledDensity
+        return (pxValue / scale + 0.5f).toInt()
     }
-
 }

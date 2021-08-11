@@ -1,393 +1,357 @@
-package com.binioter.guideview;
+package com.jqorz.guideview
 
-import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.PorterDuff;
-import android.graphics.PorterDuffXfermode;
-import android.graphics.Rect;
-import android.graphics.RectF;
-import android.util.AttributeSet;
-import android.util.DisplayMetrics;
-import android.view.View;
-import android.view.ViewGroup;
-import android.view.WindowManager;
-
-import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
+import android.content.Context
+import android.graphics.*
+import android.util.AttributeSet
+import android.util.DisplayMetrics
+import android.view.*
 
 /**
  * Created by binIoter
  */
-
-class MaskView extends ViewGroup {
+internal class MaskView @JvmOverloads constructor(context: Context?, attrs: AttributeSet? = null, defStyle: Int = 0) :
+    ViewGroup(context, attrs, defStyle) {
     /**
      * 高亮区域
      */
-    private final RectF mTargetRect = new RectF();
+    private val mTargetRect = RectF()
+
     /**
      * 蒙层区域
      */
-    private final RectF mOverlayRect = new RectF();
+    private val mOverlayRect = RectF()
 
     /**
      * 中间变量
      */
-    private final RectF mChildTmpRect = new RectF();
+    private val mChildTmpRect = RectF()
+
     /**
      * 蒙层背景画笔
      */
-    private final Paint mFullingPaint;
-    private int mPadding = 0;
-    private int mPaddingLeft = 0;
-    private int mPaddingTop = 0;
-    private int mPaddingRight = 0;
-    private int mPaddingBottom = 0;
+    private val mFullingPaint: Paint
+    private var mPadding = 0
+    private var mPaddingLeft = 0
+    private var mPaddingTop = 0
+    private var mPaddingRight = 0
+    private var mPaddingBottom = 0
+
     /**
      * 是否覆盖目标区域
      */
-    private boolean mOverlayTarget = false;
+    private var mOverlayTarget = false
+
     /**
      * 圆角大小
      */
-    private int mCorner = 0;
+    private var mCorner = 0
+
     /**
      * 目标区域样式，默认为矩形
      */
-    private int mStyle = Component.ROUNDRECT;
+    private var mStyle: Int = Component.ROUNDRECT
+
     /**
      * 挖空画笔
      */
-    private Paint mEraser;
+    private val mEraser: Paint
+
     /**
      * 橡皮擦Bitmap
      */
-    private Bitmap mEraserBitmap;
+    private var mEraserBitmap: Bitmap?
+
     /**
      * 橡皮擦Cavas
      */
-    private Canvas mEraserCanvas;
-
-    private boolean ignoreRepadding;
-
-    private int mInitHeight;
-    private int mChangedHeight = 0;
-    private boolean mFirstFlag = true;
-
-    public MaskView(Context context) {
-        this(context, null, 0);
-    }
-
-    public MaskView(Context context, AttributeSet attrs) {
-        this(context, attrs, 0);
-    }
-
-    public MaskView(Context context, AttributeSet attrs, int defStyle) {
-        super(context, attrs, defStyle);
-        //自我绘制
-        setWillNotDraw(false);
-
-        WindowManager wm = (WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE);
-        DisplayMetrics displayMetrics = new DisplayMetrics();
-        wm.getDefaultDisplay().getRealMetrics(displayMetrics);
-        int width = displayMetrics.widthPixels;
-        int height = displayMetrics.heightPixels;
-        mOverlayRect.set(0, 0, width, height);
-        mEraserBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-        mEraserCanvas = new Canvas(mEraserBitmap);
-        mFullingPaint = new Paint();
-        mEraser = new Paint();
-        mEraser.setColor(0xFFFFFFFF);
-        //图形重叠时的处理方式，擦除效果
-        mEraser.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
-        //位图抗锯齿设置
-        mEraser.setFlags(Paint.ANTI_ALIAS_FLAG);
-    }
-
-    @Override
-    protected void onDetachedFromWindow() {
-        super.onDetachedFromWindow();
+    private val mEraserCanvas: Canvas
+    private var ignoreRepadding = false
+    private var mInitHeight = 0
+    private var mChangedHeight = 0
+    private var mFirstFlag = true
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
         try {
-            clearFocus();
-            mEraserCanvas.setBitmap(null);
-            mEraserBitmap = null;
-        } catch (Exception e) {
-            e.printStackTrace();
+            clearFocus()
+            mEraserCanvas.setBitmap(null)
+            mEraserBitmap = null
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
-    @Override
-    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-        final int w = MeasureSpec.getSize(widthMeasureSpec);
-        final int h = MeasureSpec.getSize(heightMeasureSpec);
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec)
+        val w = MeasureSpec.getSize(widthMeasureSpec)
+        val h = MeasureSpec.getSize(heightMeasureSpec)
         if (mFirstFlag) {
-            mInitHeight = h;
-            mFirstFlag = false;
+            mInitHeight = h
+            mFirstFlag = false
         }
-        if (mInitHeight > h) {
-            mChangedHeight = h - mInitHeight;
+        mChangedHeight = if (mInitHeight > h) {
+            h - mInitHeight
         } else if (mInitHeight < h) {
-            mChangedHeight = h - mInitHeight;
+            h - mInitHeight
         } else {
-            mChangedHeight = 0;
+            0
         }
-        setMeasuredDimension(w, h);
-        mOverlayRect.set(0, 0, w, h);
-        resetOutPath();
-
-        final int count = getChildCount();
-        View child;
-        for (int i = 0; i < count; i++) {
-            child = getChildAt(i);
-            if (child != null) {
-                measureChild(child, widthMeasureSpec, heightMeasureSpec);
-            }
+        setMeasuredDimension(w, h)
+        mOverlayRect[0f, 0f, w.toFloat()] = h.toFloat()
+        resetOutPath()
+        val count = childCount
+        var child: View?
+        for (i in 0 until count) {
+            child = getChildAt(i)
+            child?.let { measureChild(it, widthMeasureSpec, heightMeasureSpec) }
         }
     }
 
-    @Override
-    protected void onLayout(boolean changed, int l, int t, int r, int b) {
-        final int count = getChildCount();
-        final float density = getResources().getDisplayMetrics().density;
-        View child;
-        for (int i = 0; i < count; i++) {
-            child = getChildAt(i);
+    override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
+        val count = childCount
+        val density = resources.displayMetrics.density
+        var child: View?
+        for (i in 0 until count) {
+            child = getChildAt(i)
             if (child == null) {
-                continue;
+                continue
             }
-            LayoutParams lp = (LayoutParams) child.getLayoutParams();
-            if (lp == null) {
-                continue;
-            }
-            switch (lp.targetAnchor) {
-                case LayoutParams.ANCHOR_LEFT://左
-                    mChildTmpRect.right = mTargetRect.left;
-                    mChildTmpRect.left = mChildTmpRect.right - child.getMeasuredWidth();
-                    verticalChildPositionLayout(child, mChildTmpRect, lp.targetParentPosition);
-                    break;
-                case LayoutParams.ANCHOR_TOP://上
-                    mChildTmpRect.bottom = mTargetRect.top;
-                    mChildTmpRect.top = mChildTmpRect.bottom - child.getMeasuredHeight();
-                    horizontalChildPositionLayout(child, mChildTmpRect, lp.targetParentPosition);
-                    break;
-                case LayoutParams.ANCHOR_RIGHT://右
-                    mChildTmpRect.left = mTargetRect.right;
-                    mChildTmpRect.right = mChildTmpRect.left + child.getMeasuredWidth();
-                    verticalChildPositionLayout(child, mChildTmpRect, lp.targetParentPosition);
-                    break;
-                case LayoutParams.ANCHOR_BOTTOM://下
-                    mChildTmpRect.top = mTargetRect.bottom;
-                    mChildTmpRect.bottom = mChildTmpRect.top + child.getMeasuredHeight();
-                    horizontalChildPositionLayout(child, mChildTmpRect, lp.targetParentPosition);
-                    break;
-                case LayoutParams.ANCHOR_OVER://中心
-                    mChildTmpRect.left = ((int) mTargetRect.width() - child.getMeasuredWidth()) >> 1;
-                    mChildTmpRect.top = ((int) mTargetRect.height() - child.getMeasuredHeight()) >> 1;
-                    mChildTmpRect.right = ((int) mTargetRect.width() + child.getMeasuredWidth()) >> 1;
-                    mChildTmpRect.bottom = ((int) mTargetRect.height() + child.getMeasuredHeight()) >> 1;
-                    mChildTmpRect.offset(mTargetRect.left, mTargetRect.top);
-                    break;
+            val lp = child.layoutParams as LayoutParams
+            when (lp.targetAnchor) {
+                LayoutParams.ANCHOR_LEFT -> {
+                    mChildTmpRect.right = mTargetRect.left
+                    mChildTmpRect.left = mChildTmpRect.right - child.measuredWidth
+                    verticalChildPositionLayout(child, mChildTmpRect, lp.targetParentPosition)
+                }
+                LayoutParams.ANCHOR_TOP -> {
+                    mChildTmpRect.bottom = mTargetRect.top
+                    mChildTmpRect.top = mChildTmpRect.bottom - child.measuredHeight
+                    horizontalChildPositionLayout(child, mChildTmpRect, lp.targetParentPosition)
+                }
+                LayoutParams.ANCHOR_RIGHT -> {
+                    mChildTmpRect.left = mTargetRect.right
+                    mChildTmpRect.right = mChildTmpRect.left + child.measuredWidth
+                    verticalChildPositionLayout(child, mChildTmpRect, lp.targetParentPosition)
+                }
+                LayoutParams.ANCHOR_BOTTOM -> {
+                    mChildTmpRect.top = mTargetRect.bottom
+                    mChildTmpRect.bottom = mChildTmpRect.top + child.measuredHeight
+                    horizontalChildPositionLayout(child, mChildTmpRect, lp.targetParentPosition)
+                }
+                LayoutParams.ANCHOR_OVER -> {
+                    mChildTmpRect.left = (mTargetRect.width().toInt() - child.measuredWidth shr 1).toFloat()
+                    mChildTmpRect.top = (mTargetRect.height().toInt() - child.measuredHeight shr 1).toFloat()
+                    mChildTmpRect.right = (mTargetRect.width().toInt() + child.measuredWidth shr 1).toFloat()
+                    mChildTmpRect.bottom = (mTargetRect.height().toInt() + child.measuredHeight shr 1).toFloat()
+                    mChildTmpRect.offset(mTargetRect.left, mTargetRect.top)
+                }
             }
             //额外的xy偏移
-            mChildTmpRect.offset((int) (density * lp.offsetX + 0.5f),
-                    (int) (density * lp.offsetY + 0.5f));
-            child.layout((int) mChildTmpRect.left, (int) mChildTmpRect.top, (int) mChildTmpRect.right,
-                    (int) mChildTmpRect.bottom);
+            mChildTmpRect.offset(
+                (density * lp.offsetX + 0.5f),
+                (density * lp.offsetY + 0.5f)
+            )
+            child.layout(
+                mChildTmpRect.left.toInt(), mChildTmpRect.top.toInt(), mChildTmpRect.right.toInt(),
+                mChildTmpRect.bottom.toInt()
+            )
         }
     }
 
-    private void horizontalChildPositionLayout(View child, RectF rect, int targetParentPosition) {
-        switch (targetParentPosition) {
-            case LayoutParams.PARENT_START:
-                rect.left = mTargetRect.left;
-                rect.right = rect.left + child.getMeasuredWidth();
-                break;
-            case LayoutParams.PARENT_CENTER:
-                rect.left = (mTargetRect.width() - child.getMeasuredWidth()) / 2;
-                rect.right = (mTargetRect.width() + child.getMeasuredWidth()) / 2;
-                rect.offset(mTargetRect.left, 0);
-                break;
-            case LayoutParams.PARENT_END:
-                rect.right = mTargetRect.right;
-                rect.left = rect.right - child.getMeasuredWidth();
-                break;
+    private fun horizontalChildPositionLayout(child: View, rect: RectF, targetParentPosition: Int) {
+        when (targetParentPosition) {
+            LayoutParams.PARENT_START -> {
+                rect.left = mTargetRect.left
+                rect.right = rect.left + child.measuredWidth
+            }
+            LayoutParams.PARENT_CENTER -> {
+                rect.left = (mTargetRect.width() - child.measuredWidth) / 2
+                rect.right = (mTargetRect.width() + child.measuredWidth) / 2
+                rect.offset(mTargetRect.left, 0f)
+            }
+            LayoutParams.PARENT_END -> {
+                rect.right = mTargetRect.right
+                rect.left = rect.right - child.measuredWidth
+            }
         }
     }
 
-    private void verticalChildPositionLayout(View child, RectF rect, int targetParentPosition) {
-        switch (targetParentPosition) {
-            case LayoutParams.PARENT_START:
-                rect.top = mTargetRect.top;
-                rect.bottom = rect.top + child.getMeasuredHeight();
-                break;
-            case LayoutParams.PARENT_CENTER:
-                rect.top = (mTargetRect.width() - child.getMeasuredHeight()) / 2;
-                rect.bottom = (mTargetRect.width() + child.getMeasuredHeight()) / 2;
-                rect.offset(0, mTargetRect.top);
-                break;
-            case LayoutParams.PARENT_END:
-                rect.bottom = mTargetRect.bottom;
-                rect.top = mTargetRect.bottom - child.getMeasuredHeight();
-                break;
+    private fun verticalChildPositionLayout(child: View, rect: RectF, targetParentPosition: Int) {
+        when (targetParentPosition) {
+            LayoutParams.PARENT_START -> {
+                rect.top = mTargetRect.top
+                rect.bottom = rect.top + child.measuredHeight
+            }
+            LayoutParams.PARENT_CENTER -> {
+                rect.top = (mTargetRect.width() - child.measuredHeight) / 2
+                rect.bottom = (mTargetRect.width() + child.measuredHeight) / 2
+                rect.offset(0f, mTargetRect.top)
+            }
+            LayoutParams.PARENT_END -> {
+                rect.bottom = mTargetRect.bottom
+                rect.top = mTargetRect.bottom - child.measuredHeight
+            }
         }
     }
 
-    private void resetOutPath() {
-        resetPadding();
+    private fun resetOutPath() {
+        resetPadding()
     }
 
     /**
      * 设置padding
      */
-    private void resetPadding() {
+    private fun resetPadding() {
         if (!ignoreRepadding) {
             if (mPadding != 0 && mPaddingLeft == 0) {
-                mTargetRect.left -= mPadding;
+                mTargetRect.left -= mPadding.toFloat()
             }
             if (mPadding != 0 && mPaddingTop == 0) {
-                mTargetRect.top -= mPadding;
+                mTargetRect.top -= mPadding.toFloat()
             }
             if (mPadding != 0 && mPaddingRight == 0) {
-                mTargetRect.right += mPadding;
+                mTargetRect.right += mPadding.toFloat()
             }
             if (mPadding != 0 && mPaddingBottom == 0) {
-                mTargetRect.bottom += mPadding;
+                mTargetRect.bottom += mPadding.toFloat()
             }
             if (mPaddingLeft != 0) {
-                mTargetRect.left -= mPaddingLeft;
+                mTargetRect.left -= mPaddingLeft.toFloat()
             }
             if (mPaddingTop != 0) {
-                mTargetRect.top -= mPaddingTop;
+                mTargetRect.top -= mPaddingTop.toFloat()
             }
             if (mPaddingRight != 0) {
-                mTargetRect.right += mPaddingRight;
+                mTargetRect.right += mPaddingRight.toFloat()
             }
             if (mPaddingBottom != 0) {
-                mTargetRect.bottom += mPaddingBottom;
+                mTargetRect.bottom += mPaddingBottom.toFloat()
             }
-            ignoreRepadding = true;
+            ignoreRepadding = true
         }
     }
 
-    @Override
-    protected LayoutParams generateDefaultLayoutParams() {
-        return new LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
+    override fun generateDefaultLayoutParams(): LayoutParams {
+        return LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
     }
 
-    @Override
-    protected void dispatchDraw(Canvas canvas) {
-        final long drawingTime = getDrawingTime();
+    override fun dispatchDraw(canvas: Canvas) {
+        val drawingTime = drawingTime
         try {
-            View child;
-            for (int i = 0; i < getChildCount(); i++) {
-                child = getChildAt(i);
-                drawChild(canvas, child, drawingTime);
+            var child: View?
+            for (i in 0 until childCount) {
+                child = getChildAt(i)
+                drawChild(canvas, child, drawingTime)
             }
-        } catch (NullPointerException e) {
-
+        } catch (e: NullPointerException) {
         }
     }
 
-    @Override
-    protected void onDraw(Canvas canvas) {
-        super.onDraw(canvas);
+    override fun onDraw(canvas: Canvas) {
+        super.onDraw(canvas)
         if (mChangedHeight != 0) {
-            mTargetRect.offset(0, mChangedHeight);
-            mInitHeight = mInitHeight + mChangedHeight;
-            mChangedHeight = 0;
+            mTargetRect.offset(0f, mChangedHeight.toFloat())
+            mInitHeight += mChangedHeight
+            mChangedHeight = 0
         }
-        mEraserBitmap.eraseColor(Color.TRANSPARENT);
-        mEraserCanvas.drawColor(mFullingPaint.getColor());
+        mEraserBitmap!!.eraseColor(Color.TRANSPARENT)
+        mEraserCanvas.drawColor(mFullingPaint.color)
         if (!mOverlayTarget) {
-            switch (mStyle) {
-                case Component.ROUNDRECT:
-                    mEraserCanvas.drawRoundRect(mTargetRect, mCorner, mCorner, mEraser);
-                    break;
-                case Component.CIRCLE:
-                    mEraserCanvas.drawCircle(mTargetRect.centerX(), mTargetRect.centerY(),
-                            mTargetRect.width() / 2, mEraser);
-                    break;
-                default:
-                    mEraserCanvas.drawRoundRect(mTargetRect, mCorner, mCorner, mEraser);
-                    break;
+            when (mStyle) {
+                Component.ROUNDRECT -> mEraserCanvas.drawRoundRect(
+                    mTargetRect,
+                    mCorner.toFloat(),
+                    mCorner.toFloat(),
+                    mEraser
+                )
+                Component.CIRCLE -> mEraserCanvas.drawCircle(
+                    mTargetRect.centerX(), mTargetRect.centerY(),
+                    mTargetRect.width() / 2, mEraser
+                )
+                else -> mEraserCanvas.drawRoundRect(mTargetRect, mCorner.toFloat(), mCorner.toFloat(), mEraser)
             }
         }
-        canvas.drawBitmap(mEraserBitmap, mOverlayRect.left, mOverlayRect.top, null);
+        canvas.drawBitmap(mEraserBitmap!!, mOverlayRect.left, mOverlayRect.top, null)
     }
 
-    public void setTargetRect(Rect rect) {
-        mTargetRect.set(rect);
+    fun setTargetRect(rect: Rect?) {
+        mTargetRect.set(rect)
     }
 
-    public void setFullingAlpha(int alpha) {
-        mFullingPaint.setAlpha(alpha);
+    fun setFullingAlpha(alpha: Int) {
+        mFullingPaint.alpha = alpha
     }
 
-    public void setFullingColor(int color) {
-        mFullingPaint.setColor(color);
+    fun setFullingColor(color: Int) {
+        mFullingPaint.color = color
     }
 
-    public void setHighTargetCorner(int corner) {
-        this.mCorner = corner;
+    fun setHighTargetCorner(corner: Int) {
+        mCorner = corner
     }
 
-    public void setHighTargetGraphStyle(int style) {
-        this.mStyle = style;
+    fun setHighTargetGraphStyle(style: Int) {
+        mStyle = style
     }
 
-    public void setOverlayTarget(boolean b) {
-        mOverlayTarget = b;
+    fun setOverlayTarget(b: Boolean) {
+        mOverlayTarget = b
     }
 
-    public void setPadding(int padding) {
-        this.mPadding = padding;
+    fun setPadding(padding: Int) {
+        mPadding = padding
     }
 
-    public void setPaddingLeft(int paddingLeft) {
-        this.mPaddingLeft = paddingLeft;
+    fun setPaddingLeft(paddingLeft: Int) {
+        mPaddingLeft = paddingLeft
     }
 
-    public void setPaddingTop(int paddingTop) {
-        this.mPaddingTop = paddingTop;
+    fun setPaddingTop(paddingTop: Int) {
+        mPaddingTop = paddingTop
     }
 
-    public void setPaddingRight(int paddingRight) {
-        this.mPaddingRight = paddingRight;
+    fun setPaddingRight(paddingRight: Int) {
+        mPaddingRight = paddingRight
     }
 
-    public void setPaddingBottom(int paddingBottom) {
-        this.mPaddingBottom = paddingBottom;
+    fun setPaddingBottom(paddingBottom: Int) {
+        mPaddingBottom = paddingBottom
     }
 
-    static class LayoutParams extends ViewGroup.LayoutParams {
+    internal class LayoutParams(width: Int, height: Int) : ViewGroup.LayoutParams(width, height) {
+        var targetAnchor = ANCHOR_BOTTOM
+        var targetParentPosition = PARENT_CENTER
+        var offsetX = 0
+        var offsetY = 0
 
-        public static final int ANCHOR_LEFT = 0x01;
-        public static final int ANCHOR_TOP = 0x02;
-        public static final int ANCHOR_RIGHT = 0x03;
-        public static final int ANCHOR_BOTTOM = 0x04;
-        public static final int ANCHOR_OVER = 0x05;
-
-        public static final int PARENT_START = 0x10;
-        public static final int PARENT_CENTER = 0x20;
-        public static final int PARENT_END = 0x30;
-
-        public int targetAnchor = ANCHOR_BOTTOM;
-        public int targetParentPosition = PARENT_CENTER;
-        public int offsetX = 0;
-        public int offsetY = 0;
-
-        public LayoutParams(Context c, AttributeSet attrs) {
-            super(c, attrs);
+        companion object {
+            const val ANCHOR_LEFT = 0x01
+            const val ANCHOR_TOP = 0x02
+            const val ANCHOR_RIGHT = 0x03
+            const val ANCHOR_BOTTOM = 0x04
+            const val ANCHOR_OVER = 0x05
+            const val PARENT_START = 0x10
+            const val PARENT_CENTER = 0x20
+            const val PARENT_END = 0x30
         }
+    }
 
-        public LayoutParams(int width, int height) {
-            super(width, height);
-        }
-
-        public LayoutParams(ViewGroup.LayoutParams source) {
-            super(source);
-        }
+    init {
+        //自我绘制
+        setWillNotDraw(false)
+        val wm = getContext().getSystemService(Context.WINDOW_SERVICE) as WindowManager
+        val displayMetrics = DisplayMetrics()
+        wm.defaultDisplay.getRealMetrics(displayMetrics)
+        val width = displayMetrics.widthPixels
+        val height = displayMetrics.heightPixels
+        mOverlayRect[0f, 0f, width.toFloat()] = height.toFloat()
+        mEraserBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        mEraserCanvas = Canvas(mEraserBitmap)
+        mFullingPaint = Paint()
+        mEraser = Paint()
+        mEraser.color = -0x1
+        //图形重叠时的处理方式，擦除效果
+        mEraser.xfermode = PorterDuffXfermode(PorterDuff.Mode.CLEAR)
+        //位图抗锯齿设置
+        mEraser.flags = Paint.ANTI_ALIAS_FLAG
     }
 }

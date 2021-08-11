@@ -1,268 +1,231 @@
-package com.binioter.guideview;
+package com.jqorz.guideview
 
-import android.app.Activity;
-import android.content.Context;
-import android.view.KeyEvent;
-import android.view.MotionEvent;
-import android.view.View;
-import android.view.ViewGroup;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
+import android.app.Activity
+import android.view.*
+import android.view.View.OnTouchListener
+import android.view.animation.Animation
+import android.view.animation.Animation.AnimationListener
+import android.view.animation.AnimationUtils
+import com.jqorz.guideview.GuideBuilder.*
 
 /**
- * 遮罩系统的封装 <br>
- * * 外部需要调用{@link GuideBuilder}来创建该实例，实例创建后调用
- * * {@link #show(Activity)} 控制显示； 调用 {@link #dismiss()}让遮罩系统消失。 <br>
- * <p>
+ * 遮罩系统的封装 <br></br>
+ * * 外部需要调用[GuideBuilder]来创建该实例，实例创建后调用
+ * * [.show] 控制显示； 调用 [.dismiss]让遮罩系统消失。 <br></br>
+ *
+ *
  * Created by binIoter
  */
+class Guide internal constructor() : View.OnKeyListener, OnTouchListener {
+    private var mConfiguration: Configuration? = null
+    private var mMaskView: MaskView? = null
+    private var mComponents: Array<Component>? = null
 
-public class Guide implements View.OnKeyListener, View.OnTouchListener {
-
-    Guide() {
-    }
-
-    /**
-     * 滑动临界值
-     */
-    private static final int SLIDE_THRESHOLD = 30;
-    private Configuration mConfiguration;
-    private MaskView mMaskView;
-    private Component[] mComponents;
     // 根据locInwindow定位后，是否需要判断loc值非0
-    private boolean mShouldCheckLocInWindow = true;
-    private GuideBuilder.OnVisibilityChangedListener mOnVisibilityChangedListener;
-    private GuideBuilder.OnSlideListener mOnSlideListener;
-
-    void setConfiguration(Configuration configuration) {
-        mConfiguration = configuration;
+    private var mShouldCheckLocInWindow = true
+    private var mOnVisibilityChangedListener: OnVisibilityChangedListener? = null
+    private var mOnSlideListener: OnSlideListener? = null
+    fun setConfiguration(configuration: Configuration?) {
+        mConfiguration = configuration
     }
 
-    void setComponents(Component[] components) {
-        mComponents = components;
+    fun setComponents(components: Array<Component>?) {
+        mComponents = components
     }
 
-    void setCallback(GuideBuilder.OnVisibilityChangedListener listener) {
-        this.mOnVisibilityChangedListener = listener;
+    fun setCallback(listener: OnVisibilityChangedListener?) {
+        mOnVisibilityChangedListener = listener
     }
 
-    public void setOnSlideListener(GuideBuilder.OnSlideListener onSlideListener) {
-        this.mOnSlideListener = onSlideListener;
+    fun setOnSlideListener(onSlideListener: OnSlideListener?) {
+        mOnSlideListener = onSlideListener
     }
-
+    /**
+     * 显示遮罩
+     *
+     * @param activity 目标Activity
+     * @param overlay0  遮罩层view
+     */
     /**
      * 显示遮罩
      *
      * @param activity 目标Activity
      */
-    public void show(Activity activity) {
-        show(activity, null);
-    }
-
-    /**
-     * 显示遮罩
-     *
-     * @param activity 目标Activity
-     * @param overlay  遮罩层view
-     */
-    public void show(Activity activity, ViewGroup overlay) {
-        mMaskView = onCreateView(activity, overlay);
+    @JvmOverloads
+    fun show(activity: Activity, overlay0: ViewGroup? = null) {
+        var overlay = overlay0
+        mMaskView = onCreateView(activity, overlay)
         if (overlay == null) {
-            overlay = (ViewGroup) activity.getWindow().getDecorView();
+            overlay = activity.window.decorView as ViewGroup
         }
-        if (mMaskView.getParent() == null && mConfiguration.mTargetView != null) {
-            overlay.addView(mMaskView);
-            if (mConfiguration.mEnterAnimationId != -1) {
-                Animation anim = AnimationUtils.loadAnimation(activity, mConfiguration.mEnterAnimationId);
-                assert anim != null;
-                anim.setAnimationListener(new Animation.AnimationListener() {
-                    @Override
-                    public void onAnimationStart(Animation animation) {
-
-                    }
-
-                    @Override
-                    public void onAnimationEnd(Animation animation) {
+        if (mMaskView!!.parent == null && mConfiguration!!.mTargetView != null) {
+            overlay.addView(mMaskView)
+            if (mConfiguration!!.mEnterAnimationId != -1) {
+                val anim = AnimationUtils.loadAnimation(activity, mConfiguration!!.mEnterAnimationId)!!
+                anim.setAnimationListener(object : AnimationListener {
+                    override fun onAnimationStart(animation: Animation) {}
+                    override fun onAnimationEnd(animation: Animation) {
                         if (mOnVisibilityChangedListener != null) {
-                            mOnVisibilityChangedListener.onShown();
+                            mOnVisibilityChangedListener!!.onShown()
                         }
                     }
 
-                    @Override
-                    public void onAnimationRepeat(Animation animation) {
-
-                    }
-                });
-                mMaskView.startAnimation(anim);
+                    override fun onAnimationRepeat(animation: Animation) {}
+                })
+                mMaskView!!.startAnimation(anim)
             } else {
                 if (mOnVisibilityChangedListener != null) {
-                    mOnVisibilityChangedListener.onShown();
+                    mOnVisibilityChangedListener!!.onShown()
                 }
             }
         }
     }
 
-    public void clear() {
+    fun clear() {
         if (mMaskView == null) {
-            return;
+            return
         }
-        final ViewGroup vp = (ViewGroup) mMaskView.getParent();
-        if (vp == null) {
-            return;
-        }
-        vp.removeView(mMaskView);
-        onDestroy();
+        val vp = mMaskView!!.parent as ViewGroup ?: return
+        vp.removeView(mMaskView)
+        onDestroy()
     }
 
     /**
      * 隐藏该遮罩并回收资源相关
      */
-    public void dismiss() {
+    fun dismiss() {
         if (mMaskView == null) {
-            return;
+            return
         }
-        final ViewGroup vp = (ViewGroup) mMaskView.getParent();
-        if (vp == null) {
-            return;
-        }
-        if (mConfiguration.mExitAnimationId != -1) {
+        val vp = mMaskView!!.parent as ViewGroup ?: return
+        if (mConfiguration!!.mExitAnimationId != -1) {
             // mMaskView may leak if context is null
-            Context context = mMaskView.getContext();
-            assert context != null;
-
-            Animation anim = AnimationUtils.loadAnimation(context, mConfiguration.mExitAnimationId);
-            assert anim != null;
-            anim.setAnimationListener(new Animation.AnimationListener() {
-                @Override
-                public void onAnimationStart(Animation animation) {
-
-                }
-
-                @Override
-                public void onAnimationEnd(Animation animation) {
-                    vp.removeView(mMaskView);
+            val context = mMaskView!!.context!!
+            val anim = AnimationUtils.loadAnimation(context, mConfiguration!!.mExitAnimationId)!!
+            anim.setAnimationListener(object : AnimationListener {
+                override fun onAnimationStart(animation: Animation) {}
+                override fun onAnimationEnd(animation: Animation) {
+                    vp.removeView(mMaskView)
                     if (mOnVisibilityChangedListener != null) {
-                        mOnVisibilityChangedListener.onDismiss();
+                        mOnVisibilityChangedListener!!.onDismiss()
                     }
-                    onDestroy();
+                    onDestroy()
                 }
 
-                @Override
-                public void onAnimationRepeat(Animation animation) {
-
-                }
-            });
-            mMaskView.startAnimation(anim);
+                override fun onAnimationRepeat(animation: Animation) {}
+            })
+            mMaskView!!.startAnimation(anim)
         } else {
-            vp.removeView(mMaskView);
+            vp.removeView(mMaskView)
             if (mOnVisibilityChangedListener != null) {
-                mOnVisibilityChangedListener.onDismiss();
+                mOnVisibilityChangedListener!!.onDismiss()
             }
-            onDestroy();
+            onDestroy()
         }
     }
 
     /**
      * 根据locInwindow定位后，是否需要判断loc值非0
      */
-    public void setShouldCheckLocInWindow(boolean set) {
-        mShouldCheckLocInWindow = set;
+    fun setShouldCheckLocInWindow(set: Boolean) {
+        mShouldCheckLocInWindow = set
     }
 
-    private MaskView onCreateView(Activity activity, ViewGroup overlay) {
+    private fun onCreateView(activity: Activity, overlay: ViewGroup?): MaskView {
+        var overlay = overlay
         if (overlay == null) {
-            overlay = (ViewGroup) activity.getWindow().getDecorView();
+            overlay = activity.window.decorView as ViewGroup
         }
-        MaskView maskView = new MaskView(activity);
-        maskView.setFullingColor(activity.getResources().getColor(mConfiguration.mFullingColorId));
-        maskView.setFullingAlpha(mConfiguration.mAlpha);
-        maskView.setHighTargetCorner(mConfiguration.mCorner);
-        maskView.setPadding(mConfiguration.mPadding);
-        maskView.setPaddingLeft(mConfiguration.mPaddingLeft);
-        maskView.setPaddingTop(mConfiguration.mPaddingTop);
-        maskView.setPaddingRight(mConfiguration.mPaddingRight);
-        maskView.setPaddingBottom(mConfiguration.mPaddingBottom);
-        maskView.setHighTargetGraphStyle(mConfiguration.mGraphStyle);
-        maskView.setOverlayTarget(mConfiguration.mOverlayTarget);
-        maskView.setOnKeyListener(this);
+        val maskView = MaskView(activity)
+        maskView.setFullingColor(activity.resources.getColor(mConfiguration!!.mFullingColorId))
+        maskView.setFullingAlpha(mConfiguration!!.mAlpha)
+        maskView.setHighTargetCorner(mConfiguration!!.mCorner)
+        maskView.setPadding(mConfiguration!!.mPadding)
+        maskView.paddingLeft = mConfiguration!!.mPaddingLeft
+        maskView.paddingTop = mConfiguration!!.mPaddingTop
+        maskView.paddingRight = mConfiguration!!.mPaddingRight
+        maskView.paddingBottom = mConfiguration!!.mPaddingBottom
+        maskView.setHighTargetGraphStyle(mConfiguration!!.mGraphStyle)
+        maskView.setOverlayTarget(mConfiguration!!.mOverlayTarget)
+        maskView.setOnKeyListener(this)
 
         // For removing the height of status bar we need the root content view's
         // location on screen
-        int parentX = 0;
-        int parentY = 0;
+        var parentX = 0
+        var parentY = 0
         if (overlay != null) {
-            int[] loc = new int[2];
-            overlay.getLocationInWindow(loc);
-            parentX = loc[0];
-            parentY = loc[1];
+            val loc = IntArray(2)
+            overlay.getLocationInWindow(loc)
+            parentX = loc[0]
+            parentY = loc[1]
         }
-
-        if (mConfiguration.mTargetView != null) {
-            maskView.setTargetRect(Common.getViewAbsRect(mConfiguration.mTargetView, parentX, parentY));
+        if (mConfiguration!!.mTargetView != null) {
+            maskView.setTargetRect(Common.getViewAbsRect(mConfiguration!!.mTargetView, parentX, parentY))
         } else {
             // Gets the target view's abs rect
-            View target = activity.findViewById(mConfiguration.mTargetViewId);
+            val target = activity.findViewById<View>(mConfiguration!!.mTargetViewId)
             if (target != null) {
-                maskView.setTargetRect(Common.getViewAbsRect(target, parentX, parentY));
+                maskView.setTargetRect(Common.getViewAbsRect(target, parentX, parentY))
             }
         }
-
-        if (mConfiguration.mOutsideTouchable) {
-            maskView.setClickable(false);
+        if (mConfiguration!!.mOutsideTouchable) {
+            maskView.isClickable = false
         } else {
-            maskView.setOnTouchListener(this);
+            maskView.setOnTouchListener(this)
         }
 
         // Adds the components to the mask view.
-        for (Component c : mComponents) {
-            maskView.addView(Common.componentToView(activity.getLayoutInflater(), c));
+        for (c in mComponents!!) {
+            maskView.addView(Common.componentToView(activity.layoutInflater, c))
         }
-
-        return maskView;
+        return maskView
     }
 
-    private void onDestroy() {
-        mConfiguration = null;
-        mComponents = null;
-        mOnVisibilityChangedListener = null;
-        mOnSlideListener = null;
-        mMaskView.removeAllViews();
-        mMaskView = null;
+    private fun onDestroy() {
+        mConfiguration = null
+        mComponents = null
+        mOnVisibilityChangedListener = null
+        mOnSlideListener = null
+        mMaskView!!.removeAllViews()
+        mMaskView = null
     }
 
-    @Override
-    public boolean onKey(View v, int keyCode, KeyEvent event) {
-        if (keyCode == KeyEvent.KEYCODE_BACK && event.getAction() == KeyEvent.ACTION_UP) {
-            if (mConfiguration != null && mConfiguration.mAutoDismiss) {
-                dismiss();
-                return true;
+    override fun onKey(v: View, keyCode: Int, event: KeyEvent): Boolean {
+        return if (keyCode == KeyEvent.KEYCODE_BACK && event.action == KeyEvent.ACTION_UP) {
+            if (mConfiguration != null && mConfiguration!!.mAutoDismiss) {
+                dismiss()
+                true
             } else {
-                return false;
+                false
             }
-        }
-        return false;
+        } else false
     }
 
-    float startY = -1f;
-
-    @Override
-    public boolean onTouch(View view, MotionEvent motionEvent) {
-        if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
-            startY = motionEvent.getY();
-        } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
-            if (startY - motionEvent.getY() > DimenUtil.dp2px(view.getContext(), SLIDE_THRESHOLD)) {
+    var startY = -1f
+    override fun onTouch(view: View, motionEvent: MotionEvent): Boolean {
+        if (motionEvent.action == MotionEvent.ACTION_DOWN) {
+            startY = motionEvent.y
+        } else if (motionEvent.action == MotionEvent.ACTION_UP) {
+            if (startY - motionEvent.y > DimenUtil.dp2px(view.context, SLIDE_THRESHOLD.toFloat())) {
                 if (mOnSlideListener != null) {
-                    mOnSlideListener.onSlideListener(GuideBuilder.SlideState.UP);
+                    mOnSlideListener!!.onSlideListener(SlideState.UP)
                 }
-            } else if (motionEvent.getY() - startY > DimenUtil.dp2px(view.getContext(), SLIDE_THRESHOLD)) {
+            } else if (motionEvent.y - startY > DimenUtil.dp2px(view.context, SLIDE_THRESHOLD.toFloat())) {
                 if (mOnSlideListener != null) {
-                    mOnSlideListener.onSlideListener(GuideBuilder.SlideState.DOWN);
+                    mOnSlideListener!!.onSlideListener(SlideState.DOWN)
                 }
             }
-            if (mConfiguration != null && mConfiguration.mAutoDismiss) {
-                dismiss();
+            if (mConfiguration != null && mConfiguration!!.mAutoDismiss) {
+                dismiss()
             }
         }
-        return true;
+        return true
+    }
+
+    companion object {
+        /**
+         * 滑动临界值
+         */
+        private const val SLIDE_THRESHOLD = 30
     }
 }

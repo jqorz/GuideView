@@ -1,86 +1,80 @@
-package com.binioter.guideview;
+package com.jqorz.guideview
 
-import android.view.LayoutInflater;
-import android.view.View;
+import android.view.LayoutInflater
+import android.view.View
 
 /**
- * * 遮罩系统中相对于目标区域而绘制一些图片或者文字等view需要实现的接口. <br>
- *  * <br>
- *  * {@link #getView(LayoutInflater)} <br>
- *  * {@link #getAnchor()} <br>
- *  * {@link #getFitPosition()} <br>
- *  * {@link #getXOffset()} <br>
- *  * {@link #getYOffset()}
- *  * <br>
- *  * 具体创建遮罩的说明请参加{@link GuideBuilder}
- *  *
+ * * 遮罩系统中相对于目标区域而绘制一些图片或者文字等view需要实现的接口. <br></br>
+ * * <br></br>
+ * * [.getView] <br></br>
+ * * [.getAnchor] <br></br>
+ * * [.getFitPosition] <br></br>
+ * * [.getXOffset] <br></br>
+ * * [.getYOffset]
+ * * <br></br>
+ * * 具体创建遮罩的说明请参加[GuideBuilder]
+ * *
+ *
  *
  * Created by binIoter
  */
+interface Component {
+    /**
+     * 需要显示的view
+     *
+     * @param inflater use to inflate xml resource file
+     * @return the component view
+     */
+    fun getView(inflater: LayoutInflater): View
 
-public interface Component {
+    /**
+     * 相对目标View的锚点
+     *
+     * @return could be [.ANCHOR_LEFT], [.ANCHOR_RIGHT],
+     * [.ANCHOR_TOP], [.ANCHOR_BOTTOM], [.ANCHOR_OVER]
+     */
+    val anchor: Int
 
-  public final static int FIT_START = MaskView.LayoutParams.PARENT_START;
+    /**
+     * 相对目标View的对齐
+     *
+     * @return could be [.FIT_START], [.FIT_END],
+     * [.FIT_CENTER]
+     */
+    val fitPosition: Int
 
-  public final static int FIT_END = MaskView.LayoutParams.PARENT_END;
+    /**
+     * 相对目标View的X轴位移，在计算锚点和对齐之后。
+     *
+     * @return X轴偏移量, 单位 dp
+     */
+    val xOffset: Int
 
-  public final static int FIT_CENTER = MaskView.LayoutParams.PARENT_CENTER;
+    /**
+     * 相对目标View的Y轴位移，在计算锚点和对齐之后。
+     *
+     * @return Y轴偏移量，单位 dp
+     */
+    val yOffset: Int
 
-  public final static int ANCHOR_LEFT = MaskView.LayoutParams.ANCHOR_LEFT;
+    companion object {
+        val FIT_END: Int = MaskView.LayoutParams.PARENT_END
+        val FIT_CENTER: Int = MaskView.LayoutParams.PARENT_CENTER
+        val ANCHOR_LEFT: Int = MaskView.LayoutParams.ANCHOR_LEFT
+        val ANCHOR_RIGHT: Int = MaskView.LayoutParams.ANCHOR_RIGHT
+        val ANCHOR_BOTTOM: Int = MaskView.LayoutParams.ANCHOR_BOTTOM
+        val ANCHOR_TOP: Int = MaskView.LayoutParams.ANCHOR_TOP
+        val ANCHOR_OVER: Int = MaskView.LayoutParams.ANCHOR_OVER
 
-  public final static int ANCHOR_RIGHT = MaskView.LayoutParams.ANCHOR_RIGHT;
+        /**
+         * 圆角矩形&矩形
+         */
+        const val ROUNDRECT = 0
 
-  public final static int ANCHOR_BOTTOM = MaskView.LayoutParams.ANCHOR_BOTTOM;
-
-  public final static int ANCHOR_TOP = MaskView.LayoutParams.ANCHOR_TOP;
-
-  public final static int ANCHOR_OVER = MaskView.LayoutParams.ANCHOR_OVER;
-
-  /**
-   * 圆角矩形&矩形
-   */
-  public final static int ROUNDRECT = 0;
-
-  /**
-   * 圆形
-   */
-  public final static int CIRCLE = 1;
-
-  /**
-   * 需要显示的view
-   *
-   * @param inflater use to inflate xml resource file
-   * @return the component view
-   */
-  View getView(LayoutInflater inflater);
-
-  /**
-   * 相对目标View的锚点
-   *
-   * @return could be {@link #ANCHOR_LEFT}, {@link #ANCHOR_RIGHT},
-   * {@link #ANCHOR_TOP}, {@link #ANCHOR_BOTTOM}, {@link #ANCHOR_OVER}
-   */
-  int getAnchor();
-
-  /**
-   * 相对目标View的对齐
-   *
-   * @return could be {@link #FIT_START}, {@link #FIT_END},
-   * {@link #FIT_CENTER}
-   */
-  int getFitPosition();
-
-  /**
-   * 相对目标View的X轴位移，在计算锚点和对齐之后。
-   *
-   * @return X轴偏移量, 单位 dp
-   */
-  int getXOffset();
-
-  /**
-   * 相对目标View的Y轴位移，在计算锚点和对齐之后。
-   *
-   * @return Y轴偏移量，单位 dp
-   */
-  int getYOffset();
+        /**
+         * 圆形
+         */
+        const val CIRCLE = 1
+        val FIT_START: Int = MaskView.LayoutParams.PARENT_START
+    }
 }
