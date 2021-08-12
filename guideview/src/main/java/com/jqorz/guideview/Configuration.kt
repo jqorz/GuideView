@@ -74,7 +74,7 @@ class Configuration {
     /**
      * 遮罩背景颜色id
      */
-    var mFullingColorId = Color.BLACK
+    var mFullingColor = Color.BLACK
 
     /**
      * 是否在点击的时候自动退出导航

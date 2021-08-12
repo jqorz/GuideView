@@ -1,7 +1,8 @@
 package com.jqorz.guideview
 
-import android.view.*
+import android.view.View
 import androidx.annotation.AnimatorRes
+import androidx.annotation.ColorInt
 import androidx.annotation.IdRes
 import androidx.annotation.IntRange
 
@@ -118,16 +119,16 @@ class GuideBuilder {
     }
 
     /**
-     * 设置蒙板颜色的资源id
+     * 设置蒙板颜色
      *
-     * @param id 资源id
+     * @param color 蒙板颜色
      * @return GuideBuilder
      */
-    fun setFullingColorId(@IdRes id: Int): GuideBuilder {
+    fun setFullingColor(@ColorInt color: Int): GuideBuilder {
         if (mBuilt) {
             throw BuildException("Already created. rebuild a new one.")
         }
-        mConfiguration!!.mFullingColorId = id
+        mConfiguration!!.mFullingColor = color
         return this
     }
 

@@ -127,7 +127,7 @@ class Guide internal constructor() : View.OnKeyListener, OnTouchListener {
             overlay = activity.window.decorView as ViewGroup
         }
         val maskView = MaskView(activity)
-        maskView.setFullingColor(activity.resources.getColor(mConfiguration!!.mFullingColorId))
+        maskView.setFullingColor(mConfiguration!!.mFullingColor)
         maskView.setFullingAlpha(mConfiguration!!.mAlpha)
         maskView.setHighTargetCorner(mConfiguration!!.mCorner)
         maskView.setPadding(mConfiguration!!.mPadding)
