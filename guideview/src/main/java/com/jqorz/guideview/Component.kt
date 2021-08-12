@@ -33,7 +33,7 @@ interface Component {
      * @return could be [.ANCHOR_LEFT], [.ANCHOR_RIGHT],
      * [.ANCHOR_TOP], [.ANCHOR_BOTTOM], [.ANCHOR_OVER]
      */
-    val anchor: Int
+    fun getAnchor(): Int
 
     /**
      * 相对目标View的对齐
@@ -41,25 +41,27 @@ interface Component {
      * @return could be [.FIT_START], [.FIT_END],
      * [.FIT_CENTER]
      */
-    val fitPosition: Int
+    fun getFitPosition(): Int
 
     /**
      * 相对目标View的X轴位移，在计算锚点和对齐之后。
      *
      * @return X轴偏移量, 单位 dp
      */
-    val xOffset: Int
+    fun getXOffset(): Int
 
     /**
      * 相对目标View的Y轴位移，在计算锚点和对齐之后。
      *
      * @return Y轴偏移量，单位 dp
      */
-    val yOffset: Int
+    fun getYOffset(): Int
 
     companion object {
+        val FIT_START: Int = MaskView.LayoutParams.PARENT_START
         val FIT_END: Int = MaskView.LayoutParams.PARENT_END
         val FIT_CENTER: Int = MaskView.LayoutParams.PARENT_CENTER
+
         val ANCHOR_LEFT: Int = MaskView.LayoutParams.ANCHOR_LEFT
         val ANCHOR_RIGHT: Int = MaskView.LayoutParams.ANCHOR_RIGHT
         val ANCHOR_BOTTOM: Int = MaskView.LayoutParams.ANCHOR_BOTTOM
@@ -75,6 +77,5 @@ interface Component {
          * 圆形
          */
         const val CIRCLE = 1
-        val FIT_START: Int = MaskView.LayoutParams.PARENT_START
     }
 }

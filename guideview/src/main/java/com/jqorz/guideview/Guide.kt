@@ -1,8 +1,11 @@
 package com.jqorz.guideview
 
 import android.app.Activity
-import android.view.*
+import android.view.KeyEvent
+import android.view.MotionEvent
+import android.view.View
 import android.view.View.OnTouchListener
+import android.view.ViewGroup
 import android.view.animation.Animation
 import android.view.animation.Animation.AnimationListener
 import android.view.animation.AnimationUtils
@@ -40,12 +43,7 @@ class Guide internal constructor() : View.OnKeyListener, OnTouchListener {
     fun setOnSlideListener(onSlideListener: OnSlideListener?) {
         mOnSlideListener = onSlideListener
     }
-    /**
-     * 显示遮罩
-     *
-     * @param activity 目标Activity
-     * @param overlay0  遮罩层view
-     */
+
     /**
      * 显示遮罩
      *
@@ -65,18 +63,14 @@ class Guide internal constructor() : View.OnKeyListener, OnTouchListener {
                 anim.setAnimationListener(object : AnimationListener {
                     override fun onAnimationStart(animation: Animation) {}
                     override fun onAnimationEnd(animation: Animation) {
-                        if (mOnVisibilityChangedListener != null) {
-                            mOnVisibilityChangedListener!!.onShown()
-                        }
+                        mOnVisibilityChangedListener?.onShown()
                     }
 
                     override fun onAnimationRepeat(animation: Animation) {}
                 })
                 mMaskView!!.startAnimation(anim)
             } else {
-                if (mOnVisibilityChangedListener != null) {
-                    mOnVisibilityChangedListener!!.onShown()
-                }
+                mOnVisibilityChangedListener?.onShown()
             }
         }
     }
@@ -85,7 +79,7 @@ class Guide internal constructor() : View.OnKeyListener, OnTouchListener {
         if (mMaskView == null) {
             return
         }
-        val vp = mMaskView!!.parent as ViewGroup ?: return
+        val vp = mMaskView?.parent as ViewGroup? ?: return
         vp.removeView(mMaskView)
         onDestroy()
     }
@@ -97,7 +91,7 @@ class Guide internal constructor() : View.OnKeyListener, OnTouchListener {
         if (mMaskView == null) {
             return
         }
-        val vp = mMaskView!!.parent as ViewGroup ?: return
+        val vp = mMaskView!!.parent as ViewGroup? ?: return
         if (mConfiguration!!.mExitAnimationId != -1) {
             // mMaskView may leak if context is null
             val context = mMaskView!!.context!!
@@ -106,9 +100,7 @@ class Guide internal constructor() : View.OnKeyListener, OnTouchListener {
                 override fun onAnimationStart(animation: Animation) {}
                 override fun onAnimationEnd(animation: Animation) {
                     vp.removeView(mMaskView)
-                    if (mOnVisibilityChangedListener != null) {
-                        mOnVisibilityChangedListener!!.onDismiss()
-                    }
+                    mOnVisibilityChangedListener?.onDismiss()
                     onDestroy()
                 }
 
@@ -117,9 +109,7 @@ class Guide internal constructor() : View.OnKeyListener, OnTouchListener {
             mMaskView!!.startAnimation(anim)
         } else {
             vp.removeView(mMaskView)
-            if (mOnVisibilityChangedListener != null) {
-                mOnVisibilityChangedListener!!.onDismiss()
-            }
+            mOnVisibilityChangedListener?.onDismiss()
             onDestroy()
         }
     }
@@ -131,8 +121,8 @@ class Guide internal constructor() : View.OnKeyListener, OnTouchListener {
         mShouldCheckLocInWindow = set
     }
 
-    private fun onCreateView(activity: Activity, overlay: ViewGroup?): MaskView {
-        var overlay = overlay
+    private fun onCreateView(activity: Activity, overlay0: ViewGroup?): MaskView {
+        var overlay = overlay0
         if (overlay == null) {
             overlay = activity.window.decorView as ViewGroup
         }
@@ -153,12 +143,10 @@ class Guide internal constructor() : View.OnKeyListener, OnTouchListener {
         // location on screen
         var parentX = 0
         var parentY = 0
-        if (overlay != null) {
-            val loc = IntArray(2)
-            overlay.getLocationInWindow(loc)
-            parentX = loc[0]
-            parentY = loc[1]
-        }
+        val loc = IntArray(2)
+        overlay.getLocationInWindow(loc)
+        parentX = loc[0]
+        parentY = loc[1]
         if (mConfiguration!!.mTargetView != null) {
             maskView.setTargetRect(Common.getViewAbsRect(mConfiguration!!.mTargetView, parentX, parentY))
         } else {

@@ -18,14 +18,10 @@ internal object Common {
             ViewGroup.LayoutParams.WRAP_CONTENT,
             ViewGroup.LayoutParams.WRAP_CONTENT
         ).apply {
-            offsetX = c.xOffset
-            offsetY = c.yOffset
-            targetAnchor = c.anchor
-            targetParentPosition = c.fitPosition
-        }
-        view.layoutParams?.let {
-            lp.width = it.width
-            lp.height = it.height
+            offsetX = c.getXOffset()
+            offsetY = c.getYOffset()
+            targetAnchor = c.getAnchor()
+            targetParentPosition = c.getFitPosition()
         }
         view.layoutParams = lp
         return view

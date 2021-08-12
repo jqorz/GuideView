@@ -4,7 +4,9 @@ import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
 import android.util.DisplayMetrics
-import android.view.*
+import android.view.View
+import android.view.ViewGroup
+import android.view.WindowManager
 
 /**
  * Created by binIoter
@@ -273,7 +275,7 @@ internal class MaskView @JvmOverloads constructor(context: Context?, attrs: Attr
         canvas.drawBitmap(mEraserBitmap!!, mOverlayRect.left, mOverlayRect.top, null)
     }
 
-    fun setTargetRect(rect: Rect?) {
+    fun setTargetRect(rect: Rect) {
         mTargetRect.set(rect)
     }
 
@@ -345,7 +347,7 @@ internal class MaskView @JvmOverloads constructor(context: Context?, attrs: Attr
         val height = displayMetrics.heightPixels
         mOverlayRect[0f, 0f, width.toFloat()] = height.toFloat()
         mEraserBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-        mEraserCanvas = Canvas(mEraserBitmap)
+        mEraserCanvas = Canvas(mEraserBitmap!!)
         mFullingPaint = Paint()
         mEraser = Paint()
         mEraser.color = -0x1
